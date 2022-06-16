@@ -9648,6 +9648,7 @@ spec:
     targetPort: 8080
   selector:
     app.kubernetes.io/name: argocd-server
+  type: NodePort
 ---
 apiVersion: v1
 kind: Service
@@ -10171,6 +10172,7 @@ spec:
       containers:
       - command:
         - argocd-server
+        - --insecure
         env:
         - name: ARGOCD_SERVER_INSECURE
           valueFrom:
@@ -10690,3 +10692,26 @@ spec:
       app.kubernetes.io/name: argocd-server
   policyTypes:
   - Ingress
+---
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: managed-cert
+spec:
+  domains:
+    - kas-pg-argocd.kakaoent.io
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: managed-cert-ingress
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: kas-pg-argocd
+    networking.gke.io/managed-certificates: managed-cert
+    kubernetes.io/ingress.class: "gce"
+spec:
+  defaultBackend:
+    service:
+      name: argocd-server
+      port:
+        number: 80
